@@ -1,0 +1,51 @@
+[tool.poetry]
+name = "tob"
+version = "0.1.0"
+description = "Local algorithmic trading platform for Binance USDⓈ-M Futures (paper by default)"
+authors = ["OpenAI Assistant <assistant@example.com>"]
+readme = "README.md"
+packages = [
+    { include = "config", from = "src" },
+    { include = "exchange", from = "src" },
+    { include = "data", from = "src" },
+    { include = "market", from = "src" },
+    { include = "strategy", from = "src" },
+    { include = "risk", from = "src" },
+    { include = "execution", from = "src" },
+    { include = "storage", from = "src" },
+    { include = "observability", from = "src" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+ccxt = "^4.3.98"
+pandas = "^2.2.2"
+numpy = "^2.0.1"
+ta = "^0.11.0"
+loguru = "^0.7.2"
+pydantic = "^2.8.2"
+pydantic-settings = "^2.4.0"
+PyYAML = "^6.0.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+ruff = "^0.5.7"
+black = "^24.8.0"
+
+[tool.poetry.scripts]
+tob = "cli:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "-ra"
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I"]

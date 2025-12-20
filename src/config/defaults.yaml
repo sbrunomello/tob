@@ -1,0 +1,63 @@
+risk:
+  risk_per_trade_pct: 0.005
+  max_daily_loss_r: 3.0
+  max_positions: 2
+  cooldown_candles: 2
+  trailing_stop: false
+  fee_rate: 0.0004
+  stop_atr_mult: 1.2
+  take_atr_mult: 1.8
+  cluster_corr_threshold: 0.75
+  max_positions_per_cluster: 1
+
+universe:
+  volume_percentile: 0.30
+  min_atr_pct: 0.004
+  min_beta_btc: 1.2
+  min_corr_btc: 0.5
+  max_symbols: 15
+  weights:
+    volume: 0.45
+    atr_pct: 0.35
+    beta: 0.20
+  manual_override: []
+
+market_quality:
+  min_trade_score: 70
+  reduced_risk_score: 50
+  spread_penalty: 20
+  atr_low_penalty: 15
+  adx_low_penalty: 10
+  wick_penalty: 10
+  liquidity_bonus: 15
+  direction_bonus: 10
+
+strategy:
+  trend:
+    min_atr_pct: 0.004
+  breakout:
+    donchian_period: 20
+    atr_zscore_spike: 2.5
+  mean_reversion:
+    bb_period: 20
+    bb_std: 2.0
+
+scoring:
+  min_trades: 30
+  disable_candles: 96
+
+btc_state:
+  squeeze_bb_width: 0.04
+  squeeze_atr_pct: 0.003
+  expanding_atr_pct: 0.006
+  trend_slope: 0.0005
+
+runner:
+  timeframe: "15m"
+  loop_seconds: 30
+
+execution:
+  execute_real_trades: false
+  entry_on: "close"  # close or next_open
+  worst_case_same_candle: true
+
