@@ -35,13 +35,17 @@ def _filter_strategies(
 
 
 def _strategy_settings(settings: Any, name: str) -> Any:
+    """Return the per-strategy settings block from either Settings or StrategySettings."""
+    # Support both the top-level Settings (settings.strategy.*) and direct StrategySettings
+    # to avoid attribute errors when callers pass the full Settings object.
+    strategy_settings = getattr(settings, "strategy", settings)
     if name == "trend_ema":
-        return settings.trend
+        return strategy_settings.trend
     if name == "breakout_donchian":
-        return settings.breakout
+        return strategy_settings.breakout
     if name == "mean_reversion_bb":
-        return settings.mean_reversion
-    return settings
+        return strategy_settings.mean_reversion
+    return strategy_settings
 
 
 def ensemble(
@@ -88,4 +92,3 @@ def ensemble(
     confidence = max(long_votes, short_votes) / total if total else 0.0
     signal = Signal(symbol, direction, float(df["close"].iloc[-1]), confidence, reasons)
     return EnsembleDecision(signal, votes, reasons)
-
