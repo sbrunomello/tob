@@ -6,7 +6,9 @@ from datetime import datetime
 
 import pandas as pd
 
+from backtest.engine import run_backtest
 from config.settings import Settings
+from storage.repo import SQLiteRepository
 from observability.report import generate_daily_report
 from runner import TradingRunner, run_live
 
@@ -30,8 +32,23 @@ def run_command(_: argparse.Namespace) -> None:
     runner.run_once("BTC/USDT", df, df)
 
 
-def backtest_command(_: argparse.Namespace) -> None:
-    print("Backtest is not implemented in this minimal scaffold yet.")
+def backtest_command(args: argparse.Namespace) -> None:
+    settings = Settings.load()
+    repo = SQLiteRepository(str(settings.db_path))
+    result = run_backtest(
+        symbol=args.symbol,
+        timeframe=args.timeframe,
+        settings=settings,
+        repo=repo,
+        limit=args.limit,
+        min_window=args.min_window,
+    )
+    summary = result.summary
+    print(
+        f"Backtest {args.symbol} {args.timeframe} | trades={summary.total_trades} "
+        f"closed={summary.closed_trades} winrate={summary.winrate:.2%} "
+        f"expectancy={summary.expectancy:.4f} max_dd={summary.max_drawdown:.4f}"
+    )
 
 
 def report_command(_: argparse.Namespace) -> None:
@@ -71,7 +88,11 @@ def main() -> None:
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("run")
-    sub.add_parser("backtest")
+    backtest_parser = sub.add_parser("backtest")
+    backtest_parser.add_argument("--symbol", default="BTC/USDT")
+    backtest_parser.add_argument("--timeframe", default=settings.live.timeframe)
+    backtest_parser.add_argument("--limit", type=int, default=1000)
+    backtest_parser.add_argument("--min-window", type=int, default=100)
     sub.add_parser("report")
     sub.add_parser("universe")
     sub.add_parser("healthcheck")
