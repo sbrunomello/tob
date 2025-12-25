@@ -123,6 +123,8 @@ class Settings(BaseSettings):
     model_config = {
         "env_prefix": "TOB_",
         "case_sensitive": False,
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
     }
 
     @classmethod

@@ -34,6 +34,15 @@ poetry install
 poetry run tob run
 ```
 
+## GUI (Streamlit)
+Interface gráfica para configurar chaves, ajustar parâmetros, acompanhar sinais/trades e executar backtests simples.
+
+```bash
+poetry run streamlit run src/gui/app.py
+```
+
+> As chaves de API são salvas em `.env` local (não versionado).
+
 ## Live (paper) com dados reais
 O comando abaixo consome candles reais da Binance USDⓈ-M Futures (15m) e executa **somente paper trading**:
 ```bash
