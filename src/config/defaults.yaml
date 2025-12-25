@@ -56,8 +56,12 @@ runner:
   timeframe: "15m"
   loop_seconds: 30
 
+live:
+  loop_seconds: 30
+  timeframe: "15m"
+  candle_limit: 300
+
 execution:
   execute_real_trades: false
   entry_on: "close"  # close or next_open
   worst_case_same_candle: true
-

@@ -18,6 +18,8 @@ class BinanceFuturesClient(ExchangeClient):
             "enableRateLimit": True,
             "apiKey": api_key or "",
             "secret": api_secret or "",
+            "timeout": 10000,
+            "options": {"defaultType": "future"},
         })
         self.guard = RateLimitGuard()
 
@@ -61,4 +63,3 @@ class BinanceFuturesClient(ExchangeClient):
             )
         except Exception as exc:  # noqa: BLE001
             logger.warning("set_leverage_failed symbol={} leverage={} error={}", symbol, leverage, exc)
-
