@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import time
 from typing import Any, Iterable
 
 from storage.schema import create_schema
@@ -44,6 +45,34 @@ class SQLiteRepository:
                 ],
             )
 
+    def fetch_latest_candle_open_time(self, exchange: str, symbol: str, timeframe: str) -> int | None:
+        cursor = self._conn.execute(
+            """
+            SELECT MAX(open_time_ms) AS max_time
+            FROM candles
+            WHERE exchange = ? AND symbol = ? AND timeframe = ?
+            """,
+            (exchange, symbol, timeframe),
+        )
+        row = cursor.fetchone()
+        if row is None or row["max_time"] is None:
+            return None
+        return int(row["max_time"])
+
+    def fetch_latest_closed_candle_open_time(self, exchange: str, symbol: str, timeframe: str) -> int | None:
+        cursor = self._conn.execute(
+            """
+            SELECT MAX(open_time_ms) AS max_time
+            FROM candles
+            WHERE exchange = ? AND symbol = ? AND timeframe = ? AND close_time_ms <= ?
+            """,
+            (exchange, symbol, timeframe, int(time.time() * 1000)),
+        )
+        row = cursor.fetchone()
+        if row is None or row["max_time"] is None:
+            return None
+        return int(row["max_time"])
+
     def fetch_candles(self, symbol: str, timeframe: str, limit: int = 200) -> list[sqlite3.Row]:
         cursor = self._conn.execute(
             """
@@ -56,6 +85,9 @@ class SQLiteRepository:
         )
         return list(cursor.fetchall())
 
+    def fetch_recent_candles(self, symbol: str, timeframe: str, limit: int = 300) -> list[sqlite3.Row]:
+        return self.fetch_candles(symbol, timeframe, limit)
+
     def store_universe(self, day: str, symbols: list[str], meta: dict[str, Any]) -> None:
         with self._conn:
             self._conn.execute(
@@ -65,6 +97,18 @@ class SQLiteRepository:
                 """,
                 (day, json.dumps(symbols), json.dumps(meta)),
             )
+
+    def fetch_universe(self, day: str) -> tuple[list[str], dict[str, Any]] | None:
+        cursor = self._conn.execute(
+            """
+            SELECT symbols_json, meta_json FROM universe_daily WHERE day = ?
+            """,
+            (day,),
+        )
+        row = cursor.fetchone()
+        if row is None:
+            return None
+        return json.loads(row["symbols_json"]), json.loads(row["meta_json"])
 
     def store_btc_state(self, time_ms: int, state: str, meta: dict[str, Any]) -> None:
         with self._conn:
@@ -153,6 +197,69 @@ class SQLiteRepository:
                 ),
             )
 
+    def open_trade(
+        self,
+        signal_id: int,
+        direction: str,
+        entry_price: float,
+        stop_price: float,
+        take_price: float,
+        fees_estimate: float,
+        meta: dict[str, Any],
+    ) -> int:
+        cursor = self._conn.execute(
+            """
+            INSERT INTO trades_simulated (
+              signal_id, direction, entry_price, stop_price, take_price, status, exit_time_ms,
+              exit_price, pnl_pct, fees_estimate, meta_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                signal_id,
+                direction,
+                entry_price,
+                stop_price,
+                take_price,
+                "OPEN",
+                None,
+                None,
+                None,
+                fees_estimate,
+                json.dumps(meta),
+            ),
+        )
+        self._conn.commit()
+        return int(cursor.lastrowid)
+
+    def close_trade(
+        self,
+        trade_id: int,
+        exit_price: float,
+        exit_time_ms: int,
+        pnl_pct: float,
+        status: str,
+    ) -> None:
+        with self._conn:
+            self._conn.execute(
+                """
+                UPDATE trades_simulated
+                SET status = ?, exit_time_ms = ?, exit_price = ?, pnl_pct = ?
+                WHERE id = ?
+                """,
+                (status, exit_time_ms, exit_price, pnl_pct, trade_id),
+            )
+
+    def get_open_positions(self) -> list[sqlite3.Row]:
+        cursor = self._conn.execute(
+            """
+            SELECT trades_simulated.*, signals.symbol
+            FROM trades_simulated
+            JOIN signals ON signals.id = trades_simulated.signal_id
+            WHERE trades_simulated.status = 'OPEN'
+            """,
+        )
+        return list(cursor.fetchall())
+
     def store_strategy_performance(
         self,
         strategy_name: str,
@@ -200,4 +307,3 @@ class SQLiteRepository:
                 """,
                 (day, trades_count, winrate, expectancy, max_drawdown, updated_at_ms),
             )
-

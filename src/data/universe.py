@@ -6,6 +6,7 @@ from typing import Any, Iterable
 
 import numpy as np
 import pandas as pd
+from loguru import logger
 
 from exchange.base import ExchangeClient
 from strategy.indicators import atr
@@ -77,16 +78,26 @@ class UniverseBuilder:
         if data.empty:
             return UniverseResult(symbols=[], scores={}, meta={"reason": "no_data"})
 
-        volume_threshold = data["volume"].quantile(1 - settings.volume_percentile)
-        filtered = data[data["volume"] >= volume_threshold]
+        volume_unavailable = data["volume"].sum() == 0
+        if volume_unavailable:
+            logger.warning("volume_unavailable_fallback")
+            filtered = data.copy()
+        else:
+            volume_threshold = data["volume"].quantile(1 - settings.volume_percentile)
+            filtered = data[data["volume"] >= volume_threshold]
         filtered = filtered[filtered["atr_pct"] >= settings.min_atr_pct]
         filtered = filtered[filtered["beta"] >= settings.min_beta_btc]
         filtered = filtered[filtered["corr"] >= settings.min_corr_btc]
         if filtered.empty:
             return UniverseResult(symbols=[], scores={}, meta={"reason": "filtered_empty"})
 
+        volume_score = (
+            _normalize(filtered["volume"])
+            if not volume_unavailable
+            else pd.Series(0.0, index=filtered.index)
+        )
         scores = (
-            settings.weights.volume * _normalize(filtered["volume"])
+            settings.weights.volume * volume_score
             + settings.weights.atr_pct * _normalize(filtered["atr_pct"])
             + settings.weights.beta * _normalize(filtered["beta"])
         )
@@ -94,6 +105,5 @@ class UniverseBuilder:
         return UniverseResult(
             symbols=list(ranked.index),
             scores=ranked.to_dict(),
-            meta={"candidates": len(filtered)},
+            meta={"candidates": len(filtered), "volume_unavailable": volume_unavailable},
         )
-

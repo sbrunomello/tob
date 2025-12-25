@@ -94,6 +94,12 @@ class ExecutionSettings(BaseModel):
     worst_case_same_candle: bool = True
 
 
+class LiveSettings(BaseModel):
+    loop_seconds: int = 30
+    timeframe: str = "15m"
+    candle_limit: int = 300
+
+
 class Settings(BaseSettings):
     """Runtime settings loaded from env and config file."""
 
@@ -112,6 +118,7 @@ class Settings(BaseSettings):
     btc_state: BtcStateSettings = Field(default_factory=BtcStateSettings)
     runner: RunnerSettings = Field(default_factory=RunnerSettings)
     execution: ExecutionSettings = Field(default_factory=ExecutionSettings)
+    live: LiveSettings = Field(default_factory=LiveSettings)
 
     model_config = {
         "env_prefix": "TOB_",
@@ -126,4 +133,3 @@ class Settings(BaseSettings):
         if config_path and config_path.exists():
             config_data.update(yaml.safe_load(config_path.read_text()) or {})
         return cls(**config_data)
-

@@ -34,6 +34,24 @@ poetry install
 poetry run tob run
 ```
 
+## Live (paper) com dados reais
+O comando abaixo consome candles reais da Binance USDⓈ-M Futures (15m) e executa **somente paper trading**:
+```bash
+poetry run tob run-live --once
+```
+
+Para rodar em loop contínuo:
+```bash
+poetry run tob run-live --loop-seconds 30
+```
+
+Argumentos úteis:
+- `--symbols "BTC/USDT,ETH/USDT"` para universe fixo.
+- `--max-symbols N` para limitar o universe diário.
+- `--timeframe 15m` (sinais apenas em candle fechado).
+
+> **NÃO NEGOCIÁVEL:** `TOB_EXECUTE_REAL_TRADES` continua `false` por padrão e o `run-live` nunca envia ordens reais.
+
 ### Outros comandos
 ```bash
 poetry run tob backtest
@@ -47,6 +65,8 @@ Para habilitar execução real (NÃO recomendado por padrão):
 ```bash
 export TOB_EXECUTE_REAL_TRADES=true
 ```
+
+**Observação:** o `tob run-live` ignora esse flag e permanece em paper trading.
 
 ## Banco de dados
 O SQLite é criado automaticamente em `data/tob.sqlite`.
